@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나만의 검 도감 - Ver 1.6.0</title>
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; margin:0; }
+        .header-container { text-align: center; margin-bottom: 20px; }
+        h1 { margin-bottom: 5px; color: #ffffff; display: inline-block; }
+        .author { font-size: 0.85rem; color: #888; margin-left: 10px; vertical-align: bottom; }
+
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 450px; margin-bottom: 20px; }
+        .input-section { background: #1e1e1e; padding: 25px; border-radius: 15px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #333; box-sizing: border-box; }
+        
+        label { display: block; margin-top: 12px; font-size: 0.85rem; color: #aaa; margin-bottom: 5px; }
+        input, select, button { width: 100%; padding: 10px; margin: 0 0 5px 0; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; background: #2a2a2a; color: white; }
+        
+        .search-filter-container { width: 100%; max-width: 1100px; margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+        #searchInput { flex: 2; max-width: 200px; padding: 10px; border: 2px solid #3498db; background: #1a1a1a; color: white; border-radius: 8px; outline: none; font-size: 0.85rem; }
+        #filterSelect { flex: 1; max-width: 120px; padding: 10px; border: 2px solid #555; background: #1a1a1a; color: white; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+
+        .worldcup-start-btn { 
+            width: auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+            color: white; border: none; padding: 10px 15px; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; font-size: 0.8rem; transition: 0.3s;
+            margin-right: auto;
+        }
+        .worldcup-start-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .half-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; color: white; transition: 0.3s; }
+        .save-btn { background-color: #2ecc71; border: 1px solid #27ae60; }
+        .save-btn:hover { background-color: #27ae60; }
+        .load-btn { background-color: #e67e22; border: 1px solid #d35400; }
+        .load-btn:hover { background-color: #d35400; }
+
+        #worldCupOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .worldcup-title { font-size: 2rem; color: #f1c40f; margin-bottom: 20px; font-weight: 800; text-shadow: 0 0 15px rgba(241,196,15,0.5); z-index: 1010; }
+        .worldcup-match { display: flex; gap: 40px; align-items: center; width: 90%; max-width: 900px; z-index: 1010; }
+        .worldcup-card { flex: 1; background: #1e1e1e; border: 3px solid #444; border-radius: 20px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .worldcup-card:hover { border-color: #f1c40f; transform: translateY(-10px); box-shadow: 0 0 30px rgba(241,196,15,0.3); }
+        .worldcup-card img { width: 100%; height: 250px; object-fit: contain; background: #000; border-radius: 10px; margin-bottom: 15px; }
+        .vs-badge { font-size: 2.5rem; font-weight: 900; color: #e74c3c; font-style: italic; z-index: 1010; }
+        .winner-display { display: none; flex-direction: column; align-items: center; text-align: center; animation: winnerPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1010; }
+        @keyframes winnerPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .winner-img { width: 400px; height: 400px; object-fit: contain; background: radial-gradient(circle, #333 0%, #000 70%); border: 5px solid #f1c40f; border-radius: 20px; box-shadow: 0 0 50px #f1c40f; margin-bottom: 20px; }
+        .confetti { position: absolute; width: 10px; height: 10px; background: #f00; z-index: 1005; animation: confettiFall 3s ease-out forwards; }
+        @keyframes confettiFall { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+        .enhance-badge-input { background-color: #333; color: #f1c40f; font-weight: bold; padding: 8px 12px; border-radius: 8px; border: 1px solid #555; min-width: 50px; text-align: center; }
+        #previewContainer { width: 100%; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-top: 5px; background: #1a1a1a; cursor: pointer; overflow: hidden; }
+        #previewContainer img { max-height: 100%; }
+        .world-map-svg { width: 100%; max-width: 650px; height: auto; background: #1a1a1a; border-radius: 15px; border: 1px solid #333; margin-bottom: 30px; }
+        .land { fill: #3a3a3a; stroke: #121212; stroke-width: 1.5; transition: fill 0.3s ease; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; width: 100%; max-width: 1100px; }
+        .sword-card { background: #252525; border-radius: 15px; padding: 15px; text-align: center; position: relative; border: 3px solid #444; height: 380px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.3s; cursor: pointer; }
+        .type-special { border: 2px solid transparent !important; background-image: linear-gradient(#252525, #252525), linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000); background-origin: border-box; background-clip: content-box, border-box; background-size: 200% 200%; animation: rainbowBorder 3s linear infinite; box-shadow: 0 0 15px rgba(255, 255, 255, 0.25); }
+        @keyframes rainbowBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .sword-img { width: 100%; height: 140px; object-fit: contain; background: #1a1a1a; border-radius: 10px; }
+        .small-btn { width: auto; padding: 5px 12px; font-size: 0.75rem; cursor: pointer; border-radius: 5px; border: 1px solid #444; background: #333; color: #ccc; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>🗡️ 나만의 검 도감</h1>
+        <span class="author">이유진 제작 (Ver 1.6.0)</span>
+    </div>
+
+    <div class="controls">
+        <div class="input-section">
+            <h3 id="formTitle" style="margin: 0 0 10px 0; font-size: 1rem; color: #3498db;">새 검 등록</h3>
+            <div id="previewContainer" tabindex="0"><span>클릭 후 이미지 붙여넣기</span></div>
+            
+            <label>검 이름</label>
+            <input type="text" id="name" placeholder="검 이름을 입력하세요">
+            
+            <label>신화 정보 (모티브)</label>
+            <div style="display: flex; gap: 10px;">
+                <select id="mythSelect" style="flex: 1;" onchange="updateMapColorFromDropdown()">
+                    <option value="none">신화 선택...</option>
+                    <option value="kr">한국</option><option value="jp">일본</option><option value="cn">중국</option><option value="india">인도</option>
+                    <option value="nordic">북유럽</option><option value="greek">그리스</option><option value="egypt">이집트</option><option value="american">아메리카</option>
+                    <option value="other">기타</option>
+                </select>
+                <input type="text" id="godName" placeholder="신 이름 (예: 오딘)" style="flex: 1;">
+            </div>
+
+            <label>검 종류 / 강화 단계</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="type" style="flex: 1;"><option value="일반">일반</option><option value="특수">특수</option></select>
+                <input type="range" id="enhance" min="0" max="20" value="0" style="flex: 2;" oninput="updateLabel(this.value)">
+                <div id="currentEnhanceDisplay" class="enhance-badge-input">+0</div>
+            </div>
+            
+            <label>시작 정보</label>
+            <input type="text" id="startName" placeholder="원래 이름">
+            
+            <button style="background-color:#3498db; font-weight:bold; margin-top:10px;" id="submitBtn" onclick="addSword()">도감 등록</button>
+            <button id="cancelBtn" onclick="cancelEdit()" style="display:none; background-color: #555;">수정 취소</button>
+            
+            <div class="btn-group">
+                <button class="half-btn save-btn" onclick="saveDataToFile()">💾 데이터 저장</button>
+                <button class="half-btn load-btn" onclick="handleLoadBtn()">📂 데이터 불러오기</button>
+            </div>
+            <input type="file" id="fileInput" style="display:none" accept=".json" onchange="loadDataFromFile(this)">
+        </div>
+    </div>
+
+    <svg class="world-map-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+        <path id="map-nordic" class="land" d="M110,60 L140,55 L160,70 L150,110 L120,115 L100,100 Z" />
+        <path id="map-eu-main" class="land" d="M70,120 L120,115 L150,130 L130,160 L70,150 Z" />
+        <path id="map-greek" class="land" d="M140,160 L170,160 L160,185 L145,180 Z" />
+        <path id="map-af" class="land" d="M60,170 L130,180 L170,240 L130,360 L70,320 L40,220 Z" />
+        <path id="map-ru" class="land" d="M170,70 L480,70 L530,120 L480,160 L170,120 Z" />
+        <path id="map-cn" class="land" d="M230,140 L430,160 L410,240 L310,230 L250,200 Z" />
+        <path id="map-india" class="land" d="M260,220 L330,220 L295,300 Z" />
+        <path id="map-kr" class="land" d="M430,170 L455,170 L455,195 L430,190 Z" />
+        <path id="map-jp" class="land" d="M475,170 L500,180 L485,220 L470,210 Z" />
+        <path id="map-oc" class="land" d="M410,320 L510,320 L510,380 L420,390 Z" />
+        <path id="map-na" class="land" d="M750,140 L720,110 L730,60 L800,50 L870,60 L900,120 L890,170 L820,200 L780,170 Z" />
+        <path id="map-sa" class="land" d="M840,220 L920,230 L950,310 L910,410 L860,360 Z" />
+    </svg>
+
+    <div class="search-filter-container">
+        <button class="worldcup-start-btn" onclick="startWorldCup()">🏆 월드컵</button>
+        <select id="filterSelect" onchange="render()"><option value="all">🌐 모든 신화</option><option value="kr">🇰🇷 한국</option><option value="jp">🇯🇵 일본</option><option value="cn">🇨🇳 중국</option><option value="india">🇮🇳 인도</option><option value="nordic">🛡️ 북유럽</option><option value="greek">🏛️ 그리스</option><option value="egypt">🏜️ 이집트</option><option value="american">🗿 아메리카</option><option value="other">🏳️ 기타</option></select>
+        <input type="text" id="searchInput" placeholder="🔍 검 이름 검색..." oninput="render()">
+    </div>
+
+    <div class="grid-container" id="grid"></div>
+
+    <div id="worldCupOverlay">
+        <div id="matchRound" class="worldcup-title">월드컵</div>
+        <div id="matchDisplay" class="worldcup-match">
+            <div id="leftCard" class="worldcup-card" onclick="selectSword(0)"></div>
+            <div class="vs-badge">VS</div>
+            <div id="rightCard" class="worldcup-card" onclick="selectSword(1)"></div>
+        </div>
+        <div id="winnerDisplay" class="winner-display">
+            <div class="worldcup-title">✨ 최종 우승 ✨</div>
+            <div id="winnerCard"></div>
+            <button onclick="closeWorldCup()" style="margin-top:20px; background:#f1c40f; color:#000; font-weight:bold; width:auto; padding:10px 40px;">도감으로 돌아가기</button>
+        </div>
+        <button id="exitWcBtn" onclick="closeWorldCup()" style="margin-top:40px; background:#444; width:auto; padding:10px 30px;">기권하기</button>
+    </div>
+
+    <script>
+        const CURRENT_KEY = 'mySwordCollection_v1.6.0';
+        let collection = JSON.parse(localStorage.getItem(CURRENT_KEY)) || JSON.parse(localStorage.getItem('mySwordCollection_v1.5.9')) || [];
+        let currentImageData = "";
+        let editIndex = -1; 
+        let wcSwords = [], wcWinners = [], wcCurrentIdx = 0;
+
+        function startWorldCup() {
+            if (collection.length < 2) return alert("최소 2개 이상의 검이 필요합니다!");
+            wcSwords = [...collection].sort(() => Math.random() - 0.5);
+            let targetSize = 2; while(targetSize < wcSwords.length) targetSize *= 2;
+            while(wcSwords.length < targetSize) wcSwords.push({ isBye: true });
+            wcWinners = []; wcCurrentIdx = 0;
+            document.getElementById('worldCupOverlay').style.display = 'flex';
+            document.getElementById('matchDisplay').style.display = 'flex';
+            document.getElementById('winnerDisplay').style.display = 'none';
+            document.getElementById('exitWcBtn').style.display = 'block';
+            updateRound(); nextMatch();
+        }
+
+        function updateRound() {
+            let n = wcSwords.length;
+            document.getElementById('matchRound').innerText = n === 2 ? "결승전" : n === 4 ? "4강" : n + "강";
+        }
+
+        function nextMatch() {
+            if (wcCurrentIdx >= wcSwords.length) {
+                wcSwords = [...wcWinners]; wcWinners = []; wcCurrentIdx = 0;
+                if (wcSwords.length === 1) return showWinner(wcSwords[0]);
+                updateRound(); return nextMatch();
+            }
+            if (wcSwords[wcCurrentIdx].isBye) { selectSword(1); return; }
+            if (wcSwords[wcCurrentIdx + 1].isBye) { selectSword(0); return; }
+            renderWCCard('leftCard', wcSwords[wcCurrentIdx]);
+            renderWCCard('rightCard', wcSwords[wcCurrentIdx+1]);
+        }
+
+        function renderWCCard(id, s) {
+            document.getElementById(id).innerHTML = `<img src="${s.image || ''}"><div class="name">${s.name}</div><div style="color:#f1c40f;font-weight:bold;">+${s.enhance} 강화</div>`;
+        }
+
+        function selectSword(idx) {
+            wcWinners.push(wcSwords[wcCurrentIdx + idx]);
+            wcCurrentIdx += 2; nextMatch();
+        }
+
+        function showWinner(s) {
+            document.getElementById('matchRound').innerText = "";
+            document.getElementById('matchDisplay').style.display = 'none';
+            document.getElementById('exitWcBtn').style.display = 'none';
+            const winnerDiv = document.getElementById('winnerDisplay');
+            winnerDiv.style.display = 'flex';
+            document.getElementById('winnerCard').innerHTML = `<img src="${s.image}" class="winner-img"><div class="worldcup-title" style="font-size:2.5rem">${s.name}</div>`;
+            for(let i=0; i<50; i++) createConfetti();
+        }
+
+        function createConfetti() {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            c.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            c.style.opacity = Math.random();
+            document.getElementById('worldCupOverlay').appendChild(c);
+            setTimeout(() => c.remove(), 3000);
+        }
+
+        function closeWorldCup() { document.getElementById('worldCupOverlay').style.display = 'none'; }
+
+        function saveDataToFile() {
+            const dataStr = JSON.stringify(collection, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sword_collection_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function handleLoadBtn() {
+            if(confirm("저장된 파일(.json)을 불러오시겠습니까?\n[취소]를 누르면 이전 버전 데이터를 자동 복구합니다.")) {
+                document.getElementById('fileInput').click();
+            } else {
+                recoverOldData();
+            }
+        }
+
+        function loadDataFromFile(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(Array.isArray(data)) {
+                        if(confirm(`${data.length}개의 검 데이터를 불러옵니다. 현재 도감에 합칠까요?`)) {
+                            collection = [...collection, ...data];
+                            collection = collection.filter((v,i,a)=>a.findIndex(t=>t.name===v.name && t.enhance===v.enhance)===i);
+                            saveAndReset();
+                            alert("불러오기 완료!");
+                        }
+                    } else { alert("올바른 도감 파일이 아닙니다."); }
+                } catch(err) { alert("파일을 읽는 중 오류가 발생했습니다."); }
+            };
+            reader.readAsText(file);
+            input.value = "";
+        }
+
+        function recoverOldData() {
+            const OLD_KEYS = ['mySwordCollection_v1.4.9','mySwordCollection_v1.5.0','mySwordCollection_v1.5.4','mySwordCollection_v1.5.5','mySwordCollection_v1.5.6','mySwordCollection_v1.5.8','mySwordCollection_v1.5.9'];
+            let found = 0;
+            OLD_KEYS.forEach(k => {
+                const d = localStorage.getItem(k); 
+                if(d) { 
+                    try { 
+                        const p = JSON.parse(d); 
+                        if(p.length > 0) { collection = [...collection, ...p]; found += p.length; }
+                    } catch(e){} 
+                } 
+            });
+            if(found > 0) {
+                collection = collection.filter((v,i,a)=>a.findIndex(t=>t.name===v.name && t.enhance===v.enhance)===i);
+                saveAndReset(); alert(`${found}개의 이전 데이터를 찾아 복구했습니다!`);
+            } else {
+                alert("복구할 이전 데이터를 찾지 못했습니다.");
+            }
+        }
+
+        const mythData = { "none":{label:"미분류",mapIds:[],color:"#aaaaaa"},"kr":{label:"한국",mapIds:["map-kr"],color:"#82ccdd"},"jp":{label:"일본",mapIds:["map-jp"],color:"#e55039"},"cn":{label:"중국",mapIds:["map-cn"],color:"#e67e22"},"india":{label:"인도",mapIds:["map-india"],color:"#9b59b6"},"nordic":{label:"북유럽",mapIds:["map-nordic"],color:"#3498db"},"greek":{label:"그리스",mapIds:["map-greek"],color:"#00cec9"},"egypt":{label:"이집트",mapIds:["map-af"],color:"#f1c40f"},"american":{label:"아메리카",mapIds:["map-na","map-sa"],color:"#2ecc71"},"other":{label:"기타",mapIds:["map-oc","map-ru","map-eu-main"],color:"#ffffff"} };
+        document.getElementById('previewContainer').addEventListener('paste', e => {
+            const item = Array.from(e.clipboardData.items).find(x => x.type.indexOf('image') !== -1);
+            if (!item) return;
+            const reader = new FileReader();
+            reader.onload = event => { currentImageData = event.target.result; document.getElementById('previewContainer').innerHTML = `<img src="${currentImageData}">`; };
+            reader.readAsDataURL(item.getAsFile());
+        });
+        function updateLabel(v) { document.getElementById('currentEnhanceDisplay').innerText = `+${v}`; }
+        function highlightMapByKey(k) { const d = mythData[k]||mythData.none; document.querySelectorAll('.land').forEach(p => p.style.fill="#3a3a3a"); d.mapIds.forEach(id => document.getElementById(id).style.fill=d.color); }
+        function updateMapColorFromDropdown() { highlightMapByKey(document.getElementById('mythSelect').value); }
+        function render() {
+            const grid = document.getElementById('grid'); grid.innerHTML = '';
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('filterSelect').value;
+            collection.sort((a,b)=>b.enhance-a.enhance).forEach((s, idx) => {
+                if ((filter !== 'all' && s.mythKey !== filter) || (!s.name.toLowerCase().includes(query) && !(s.startName||"").toLowerCase().includes(query))) return;
+                const card = document.createElement('div');
+                card.className = `sword-card ${s.type === '특수' ? 'type-special' : ''}`;
+                const m = mythData[s.mythKey || 'none'];
+                if (s.type !== '특수' && s.mythKey !== 'none') { card.style.borderColor = m.color; card.style.boxShadow = `0 0 8px ${m.color}`; }
+                card.onclick = () => highlightMapByKey(s.mythKey);
+                const startInfoText = s.startName ? (s.startName.includes('+') ? s.startName : `+1 ${s.startName}`) : '시작 정보 없음';
+                card.innerHTML = `<img src="${s.image || ''}" class="sword-img"><div style="width:100%"><div style="font-weight:bold">${s.name}</div><div style="color:${m.color};font-size:0.7rem;">[${m.label}] ${s.godName||''}</div><div style="font-size:0.7rem;color:#777;margin-top:4px;">${startInfoText}</div></div><div style="font-size:1.4rem;font-weight:800;color:#f1c40f;">+${s.enhance}</div><div style="display:flex;gap:5px;justify-content:center;"><button class="small-btn" onclick="event.stopPropagation();startEdit(${collection.indexOf(s)})">수정</button><button class="small-btn" onclick="event.stopPropagation();deleteSword(${collection.indexOf(s)})">삭제</button></div>`;
+                grid.appendChild(card);
+            });
+        }
+        function addSword() {
+            const n = document.getElementById('name').value; if(!n) return alert("이름 필수!");
+            const d = { name:n, godName:document.getElementById('godName').value, mythKey:document.getElementById('mythSelect').value, type:document.getElementById('type').value, enhance:parseInt(document.getElementById('enhance').value), startName:document.getElementById('startName').value, image:currentImageData };
+            if(editIndex>-1) collection[editIndex]=d; else collection.push(d);
+            saveAndReset();
+        }
+        function startEdit(i) {
+            editIndex=i; const s=collection[i]; document.getElementById('name').value=s.name; document.getElementById('godName').value=s.godName||''; document.getElementById('mythSelect').value=s.mythKey||'none'; document.getElementById('type').value=s.type; document.getElementById('enhance').value=s.enhance; document.getElementById('startName').value=s.startName||''; currentImageData=s.image; document.getElementById('previewContainer').innerHTML=s.image?`<img src="${s.image}">`:''; updateLabel(s.enhance); document.getElementById('formTitle').innerText="수정 중"; window.scrollTo(0,0);
+        }
+        function saveAndReset() { localStorage.setItem(CURRENT_KEY, JSON.stringify(collection)); editIndex=-1; document.getElementById('name').value=''; document.getElementById('startName').value=''; currentImageData=""; document.getElementById('previewContainer').innerHTML="<span>클릭 후 붙여넣기</span>"; render(); }
+        function deleteSword(i) { if(confirm("삭제?")) { collection.splice(i,1); saveAndReset(); } }
+        window.onload = function() { render(); updateMapColorFromDropdown(); };
+    </script>
+</body>
+</html>
